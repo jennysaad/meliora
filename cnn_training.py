@@ -1,5 +1,11 @@
 import torch
-import torch.nn as nn
+from sklearn.model_selection import train_test_split
+
+# models
+from catboost import CatBoostClassifier
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 data = torch.load("dataset.pt", weights_only=False)
 
@@ -41,16 +47,27 @@ concatenated_data = torch.cat([flattened_m_r, flattened_m_s, flattened_s_r, flat
 input_data = concatenated_data.numpy()
 print(input_data)
 
+# Split data - 80% for training, 20% for testing
+X_train, X_test, y_train, y_test = train_test_split(
+    input_data, 
+    y, 
+    test_size=0.2, 
+    random_state=42, 
+    stratify=y
+)
 
+# Split the 80% into 60 and 20 (20 validation set, use each separate model on this)
+X_trainmodel, X_validation, y_trainmodel, y_validation = train_test_split(
+    X_train, 
+    y_train, 
+    test_size=0.2, 
+    random_state=42, 
+    stratify=y_train
+)
 
+# Initialize models and fit data
+catModel = CatBoostClassifier(iterations=10, learning_rate=0.1, depth=3) # CatBoost model
+rfModel = RandomForestClassifier(iterations=10, learning_rate=0.1, depth=3) # RandomForest model
 
-
-
-
-# # Combine rbp and scc into two channels: (N, 2, 30, 5, 19)
-# # Conv3d expects (batch size, channels, depth, height, width)
-# X_input = torch.stack([X_rbp, X_scc], dim=1)   
-
-# print(X_rbp.shape, X_scc.shape)
-# print(X_input.shape)
-
+catModel.fit(X_trainmodel, y_trainmodel, verbose=0)
+rfModel.fit(X_trainmodel, y_trainmodel, verbose=0)
