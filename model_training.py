@@ -1,5 +1,6 @@
 import torch
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 # models
 from catboost import CatBoostClassifier
@@ -45,19 +46,19 @@ concatenated_data = torch.cat([flattened_m_r, flattened_m_s, flattened_s_r, flat
 
 # Convert to numpy array
 input_data = concatenated_data.numpy()
-print(input_data)
+output_data = y.numpy()
 
 # Split data - 80% for training, 20% for testing
 X_train, X_test, y_train, y_test = train_test_split(
     input_data, 
-    y, 
+    output_data, 
     test_size=0.2, 
     random_state=42, 
     stratify=y
 )
 
 # Split the 80% into 60 and 20 (20 validation set, use each separate model on this)
-X_trainmodel, X_validation, y_trainmodel, y_validation = train_test_split(
+X_traintest, X_validation, y_traintest, y_validation = train_test_split(
     X_train, 
     y_train, 
     test_size=0.2, 
@@ -65,9 +66,47 @@ X_trainmodel, X_validation, y_trainmodel, y_validation = train_test_split(
     stratify=y_train
 )
 
-# Initialize models and fit data
-catModel = CatBoostClassifier(iterations=10, learning_rate=0.1, depth=3) # CatBoost model
-rfModel = RandomForestClassifier(iterations=10, learning_rate=0.1, depth=3) # RandomForest model
+# Initialize models, fit data, predict output
+catModel = CatBoostClassifier(verbose=0)
+rfModel = RandomForestClassifier()
+xgbModel = XGBClassifier()
+lgbmModel = LGBMClassifier()
 
-catModel.fit(X_trainmodel, y_trainmodel, verbose=0)
-rfModel.fit(X_trainmodel, y_trainmodel, verbose=0)
+catModel.fit(X_traintest, y_traintest)
+rfModel.fit(X_traintest, y_traintest)
+xgbModel.fit(X_traintest, y_traintest)
+lgbmModel.fit(X_traintest, y_traintest)
+
+catPred = catModel.predict(X_validation)
+rfPred = rfModel.predict(X_validation)
+xgbPred = xgbModel.predict(X_validation)
+lgbmPred = lgbmModel.predict(X_validation)
+
+# Confidence score
+catProba = catModel.predict_proba(X_validation)[:, 1]
+rfProba = rfModel.predict_proba(X_validation)[:, 1]
+xgbProba = xgbModel.predict_proba(X_validation)[:, 1]
+lgbmProba = lgbmModel.predict_proba(X_validation)[:, 1]
+
+# Accuracy
+catCorrect = accuracy_score(y_validation, catPred)
+rfCorrect = accuracy_score(y_validation, rfPred)
+xgbCorrect = accuracy_score(y_validation, xgbPred)
+lgbmCorrect = accuracy_score(y_validation, lgbmPred)
+
+# Area under curve (how well the model's probability scores separate the two classes e.g. maybe it is just guessing)
+catAUC = roc_auc_score(y_validation, catProba)
+rfAUC = roc_auc_score(y_validation, rfProba)
+xgbAUC = roc_auc_score(y_validation, xgbProba)
+lgbmAUC = roc_auc_score(y_validation, lgbmProba)
+
+from tabulate import tabulate
+
+results = [
+    ["CatBoost",      f"{catCorrect:.4f}",  f"{catAUC:.4f}"],
+    ["Random Forest", f"{rfCorrect:.4f}",   f"{rfAUC:.4f}"],
+    ["XGBoost",       f"{xgbCorrect:.4f}",  f"{xgbAUC:.4f}"],
+    ["LightGBM",      f"{lgbmCorrect:.4f}", f"{lgbmAUC:.4f}"],
+]
+
+print(tabulate(results, headers=["Model", "Accuracy", "AUC"], tablefmt="rounded_outline"))
