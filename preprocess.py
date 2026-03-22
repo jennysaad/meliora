@@ -13,7 +13,7 @@ import pandas as pd
 # TARGET_LENGTH = 128 * 300 # this relates to the time taken to create the dataset
 
 # define file paths
-AD_path = Path('training/AD')
+AD_path = Path('testing/AD vs CN')
 CN_path = Path('training/CN')
 
 # Check that both folders actually exist before we try to load from them
@@ -63,4 +63,4 @@ torch.save({
     "X_scc": X_scc,
     "y": y.squeeze(),           # removes extra dimension: (N,1) → (N,)
     "groups": groups    
-}, "dataset.pt")
+}, "testingset.pt")

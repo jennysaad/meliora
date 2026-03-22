@@ -9,7 +9,7 @@ from tabulate import tabulate
 model = joblib.load("xgboost_model.pkl")
 
 # Load your new dataset — must be processed the same way as training data
-data = torch.load("new_dataset.pt", weights_only=False)
+data = torch.load("testingset.pt", weights_only=False)
 
 X_rbp = data["X_rbp"]
 X_scc = data["X_scc"]
