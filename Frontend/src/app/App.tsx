@@ -30,6 +30,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { ImageWithFallback } from "./components/figma/ImageWithFallback";
 
 type ModelType = "CatBoost" | "XGBoost" | "LightGBM" | "Random Forest" | null;
 type TabType = "home" | "about";
@@ -104,11 +105,8 @@ export default function App() {
       <header className="bg-primary border-b-4 border-accent">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="w-16">
-              <GrandparentIcon variant="waving" className="w-10 h-10" />
-            </div>
             <div className="flex-1 text-center">
-              <h1 className="text-xl text-white">Nana</h1>
+              <h1 className="text-xl text-white">Naana</h1>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -240,8 +238,19 @@ export default function App() {
               <div className="py-4"></div>
 
               {/* Results Section */}
-              <section>
-                <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center">
+              <section className="relative">
+                {/* GrandmaCane image above the results box border, slightly more distance from the box */}
+                <div
+                  className="absolute left-[13%] -translate-x-1/2 -top-14 z-10 hidden md:block"
+                  style={{ pointerEvents: "none" }}
+                >
+                  <ImageWithFallback
+                    src={"/src/app/components/GrandmaCaneTransparent.png"}
+                    alt="Grandma Cane walking"
+                    className="w-28 h-auto drop-shadow-lg"
+                  />
+                </div>
+                <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center relative">
                   {showResults && prediction ? (
                     <div className="w-full text-center">
                       <h3 className="mb-6 text-lg">Results</h3>
@@ -409,7 +418,7 @@ export default function App() {
                       </h2>
                       <div className="space-y-4 text-sm">
                         <p>
-                          Nana uses advanced machine learning models to analyze
+                          Naana uses advanced machine learning models to analyze
                           patterns in medical data that may indicate early signs
                           of Alzheimer's disease.
                         </p>
@@ -546,7 +555,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-primary border-t-4 border-border mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-white"> Nana © 2026</p>
+          <p className="text-center text-sm text-white"> Naana © 2026</p>
         </div>
       </footer>
     </div>
