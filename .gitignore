@@ -211,9 +211,14 @@ __marimo__/
 .DS_Store
 
 training/
+testing/
+
+/Frontend/node_modules
 
 # CatBoost training artifacts
 catboost_info/
 
-# Generated dataset
+# Generated data set
 dataset.pt
+
+.DS_Store

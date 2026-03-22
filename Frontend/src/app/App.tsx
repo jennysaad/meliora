@@ -30,6 +30,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { ImageWithFallback } from "./components/figma/ImageWithFallback";
 
 type ModelType = "CatBoost" | "XGBoost" | "LightGBM" | "Random Forest" | null;
 type TabType = "home" | "about";
@@ -77,17 +78,38 @@ export default function App() {
 
   // Mock data for charts
   const accuracyData = [
-    { model: "CatBoost", accuracy: 98 },
-    { model: "XGBoost", accuracy: 87 },
-    { model: "LightGBM", accuracy: 97 },
-    { model: "Random Forest", accuracy: 98 },
+    { model: "CatBoost", accuracy: 62 },
+    { model: "XGBoost", accuracy: 75 },
+    { model: "LightGBM", accuracy: 62 },
+    { model: "Random Forest", accuracy: 50 },
   ];
 
+  // Performance metrics for each model (from the provided table)
   const performanceData = [
-    { metric: "Accuracy", value: 98 },
-    { metric: "Precision", value: 88 },
-    { metric: "Recall", value: 85 },
-    { metric: "F1-Score", value: 86 },
+    {
+      model: "xgboost",
+      Accuracy: 0.75,
+      F1: 0.5,
+      AUC: 0.9972,
+    },
+    {
+      model: "catboost",
+      Accuracy: 0.625,
+      F1: 0.4,
+      AUC: 0.9992,
+    },
+    {
+      model: "random_forest",
+      Accuracy: 0.5,
+      F1: 0.3333,
+      AUC: 0.9994,
+    },
+    {
+      model: "lightgbm",
+      Accuracy: 0.625,
+      F1: 0.4,
+      AUC: 0.9983,
+    },
   ];
 
   const pieData = [
@@ -104,11 +126,8 @@ export default function App() {
       <header className="bg-primary border-b-4 border-accent">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="w-16">
-              <GrandparentIcon variant="waving" className="w-10 h-10" />
-            </div>
             <div className="flex-1 text-center">
-              <h1 className="text-xl text-white">Nana</h1>
+              <h1 className="text-xl text-white">Naana</h1>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -160,8 +179,21 @@ export default function App() {
                     type="file"
                     onChange={handleFileUpload}
                     className="hidden"
-                    accept=".csv,.json,.txt"
+                    accept=".csv,.json,.txt,.npy"
+                    multiple
+                    // @ts-ignore: webkitdirectory is a valid attribute for folder upload in browsers
+                    webkitdirectory="true"
+                    // @ts-ignore: directory is a valid attribute for folder upload in browsers
+                    directory="true"
                   />
+
+                  <a
+                    href="../predict"
+                    className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm inline-block"
+                    style={{ textDecoration: "none" }}
+                  >
+                    Predict
+                  </a>
 
                   <select
                     value={selectedModel || ""}
@@ -178,12 +210,14 @@ export default function App() {
                 </div>
 
                 {uploadedFile && (
-                  <button
-                    onClick={handlePredict}
-                    className="px-8 py-2 bg-accent text-white border-2 border-accent hover:bg-accent/80 text-sm mb-6"
-                  >
-                    Analyze Data ✨
-                  </button>
+                  <>
+                    <button
+                      onClick={handlePredict}
+                      className="px-8 py-2 bg-accent text-white border-2 border-accent hover:bg-accent/80 text-sm mb-6"
+                    >
+                      Analyze Data ✨
+                    </button>
+                  </>
                 )}
 
                 {/* Data Preview */}
@@ -240,8 +274,19 @@ export default function App() {
               <div className="py-4"></div>
 
               {/* Results Section */}
-              <section>
-                <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center">
+              <section className="relative">
+                {/* GrandmaCane image above the results box border, slightly more distance from the box */}
+                <div
+                  className="absolute left-[13%] -translate-x-1/2 -top-14 z-10 hidden md:block"
+                  style={{ pointerEvents: "none" }}
+                >
+                  <ImageWithFallback
+                    src={"/src/app/components/GrandmaCaneTransparent.png"}
+                    alt="Grandma Cane walking"
+                    className="w-28 h-auto drop-shadow-lg"
+                  />
+                </div>
+                <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center relative">
                   {showResults && prediction ? (
                     <div className="w-full text-center">
                       <h3 className="mb-6 text-lg">Results</h3>
@@ -293,26 +338,46 @@ export default function App() {
                       <BarChart3 className="w-4 h-4 inline mr-2 text-primary" />
                       Performance Metrics
                     </h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={performanceData}>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={performanceData}
+                        margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+                        barCategoryGap={"20%"}
+                      >
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="rgba(151, 124, 98, 0.2)"
                         />
                         <XAxis
-                          dataKey="metric"
+                          dataKey="model"
                           stroke="#4A4A4A"
                           fontSize={10}
+                          tick={{ fontFamily: "monospace" }}
                         />
-                        <YAxis stroke="#4A4A4A" fontSize={10} />
+                        <YAxis
+                          stroke="#4A4A4A"
+                          fontSize={10}
+                          domain={[0, 1]}
+                          tickFormatter={(v) => v.toFixed(2)}
+                        />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: "#fff",
                             border: "2px solid #957C62",
                             fontSize: "11px",
                           }}
+                          formatter={(value) =>
+                            typeof value === "number" ? value.toFixed(4) : value
+                          }
                         />
-                        <Bar dataKey="value" fill="#B77466" />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar
+                          dataKey="Accuracy"
+                          fill="#B77466"
+                          name="Accuracy"
+                        />
+                        <Bar dataKey="F1" fill="#957C62" name="F1" />
+                        <Bar dataKey="AUC" fill="#E2B59A" name="AUC" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -398,6 +463,14 @@ export default function App() {
 
           {activeTab === "about" && (
             <div className="space-y-8">
+              {/* GrandpaCane icon at the top of about page */}
+              <div className="flex justify-center mb-2">
+                <ImageWithFallback
+                  src={"/src/app/components/GrandpaCaneTransparent.png"}
+                  alt="Grandpa Cane"
+                  className="w-28 h-auto drop-shadow-lg"
+                />
+              </div>
               {/* How It Works Section */}
               <section>
                 <div className="bg-white border-2 border-primary p-6">
@@ -409,7 +482,7 @@ export default function App() {
                       </h2>
                       <div className="space-y-4 text-sm">
                         <p>
-                          Nana uses advanced machine learning models to analyze
+                          Naana uses advanced machine learning models to analyze
                           patterns in medical data that may indicate early signs
                           of Alzheimer's disease.
                         </p>
@@ -546,7 +619,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-primary border-t-4 border-border mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-white"> Nana © 2026</p>
+          <p className="text-center text-sm text-white"> Naana © 2026</p>
         </div>
       </footer>
     </div>
