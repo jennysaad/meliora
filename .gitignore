@@ -222,3 +222,6 @@ catboost_info/
 dataset.pt
 
 .DS_Store
+
+datasets/
+models/*.pkl
