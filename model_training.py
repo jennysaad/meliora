@@ -1,13 +1,10 @@
 import numpy as np
 import torch
-from sklearn.model_selection import GroupShuffleSplit, GroupKFold
+from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 
 # models
-from catboost import CatBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 
 from tabulate import tabulate
 
