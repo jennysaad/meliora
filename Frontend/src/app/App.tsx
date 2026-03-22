@@ -78,17 +78,38 @@ export default function App() {
 
   // Mock data for charts
   const accuracyData = [
-    { model: "CatBoost", accuracy: 98 },
-    { model: "XGBoost", accuracy: 87 },
-    { model: "LightGBM", accuracy: 97 },
-    { model: "Random Forest", accuracy: 98 },
+    { model: "CatBoost", accuracy: 62 },
+    { model: "XGBoost", accuracy: 75 },
+    { model: "LightGBM", accuracy: 62 },
+    { model: "Random Forest", accuracy: 50 },
   ];
 
+  // Performance metrics for each model (from the provided table)
   const performanceData = [
-    { metric: "Accuracy", value: 98 },
-    { metric: "Precision", value: 88 },
-    { metric: "Recall", value: 85 },
-    { metric: "F1-Score", value: 86 },
+    {
+      model: "xgboost",
+      Accuracy: 0.75,
+      F1: 0.5,
+      AUC: 0.9972,
+    },
+    {
+      model: "catboost",
+      Accuracy: 0.625,
+      F1: 0.4,
+      AUC: 0.9992,
+    },
+    {
+      model: "random_forest",
+      Accuracy: 0.5,
+      F1: 0.3333,
+      AUC: 0.9994,
+    },
+    {
+      model: "lightgbm",
+      Accuracy: 0.625,
+      F1: 0.4,
+      AUC: 0.9983,
+    },
   ];
 
   const pieData = [
@@ -158,8 +179,21 @@ export default function App() {
                     type="file"
                     onChange={handleFileUpload}
                     className="hidden"
-                    accept=".csv,.json,.txt"
+                    accept=".csv,.json,.txt,.npy"
+                    multiple
+                    // @ts-ignore: webkitdirectory is a valid attribute for folder upload in browsers
+                    webkitdirectory="true"
+                    // @ts-ignore: directory is a valid attribute for folder upload in browsers
+                    directory="true"
                   />
+
+                  <a
+                    href="../predict"
+                    className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm inline-block"
+                    style={{ textDecoration: "none" }}
+                  >
+                    Predict
+                  </a>
 
                   <select
                     value={selectedModel || ""}
@@ -176,12 +210,14 @@ export default function App() {
                 </div>
 
                 {uploadedFile && (
-                  <button
-                    onClick={handlePredict}
-                    className="px-8 py-2 bg-accent text-white border-2 border-accent hover:bg-accent/80 text-sm mb-6"
-                  >
-                    Analyze Data ✨
-                  </button>
+                  <>
+                    <button
+                      onClick={handlePredict}
+                      className="px-8 py-2 bg-accent text-white border-2 border-accent hover:bg-accent/80 text-sm mb-6"
+                    >
+                      Analyze Data ✨
+                    </button>
+                  </>
                 )}
 
                 {/* Data Preview */}
@@ -302,26 +338,46 @@ export default function App() {
                       <BarChart3 className="w-4 h-4 inline mr-2 text-primary" />
                       Performance Metrics
                     </h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={performanceData}>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart
+                        data={performanceData}
+                        margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+                        barCategoryGap={"20%"}
+                      >
                         <CartesianGrid
                           strokeDasharray="3 3"
                           stroke="rgba(151, 124, 98, 0.2)"
                         />
                         <XAxis
-                          dataKey="metric"
+                          dataKey="model"
                           stroke="#4A4A4A"
                           fontSize={10}
+                          tick={{ fontFamily: "monospace" }}
                         />
-                        <YAxis stroke="#4A4A4A" fontSize={10} />
+                        <YAxis
+                          stroke="#4A4A4A"
+                          fontSize={10}
+                          domain={[0, 1]}
+                          tickFormatter={(v) => v.toFixed(2)}
+                        />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: "#fff",
                             border: "2px solid #957C62",
                             fontSize: "11px",
                           }}
+                          formatter={(value) =>
+                            typeof value === "number" ? value.toFixed(4) : value
+                          }
                         />
-                        <Bar dataKey="value" fill="#B77466" />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar
+                          dataKey="Accuracy"
+                          fill="#B77466"
+                          name="Accuracy"
+                        />
+                        <Bar dataKey="F1" fill="#957C62" name="F1" />
+                        <Bar dataKey="AUC" fill="#E2B59A" name="AUC" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -407,6 +463,14 @@ export default function App() {
 
           {activeTab === "about" && (
             <div className="space-y-8">
+              {/* GrandpaCane icon at the top of about page */}
+              <div className="flex justify-center mb-2">
+                <ImageWithFallback
+                  src={"/src/app/components/GrandpaCaneTransparent.png"}
+                  alt="Grandpa Cane"
+                  className="w-28 h-auto drop-shadow-lg"
+                />
+              </div>
               {/* How It Works Section */}
               <section>
                 <div className="bg-white border-2 border-primary p-6">
