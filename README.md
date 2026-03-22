@@ -1,6 +1,3 @@
-# meliora
-Pharmahacks Meliora 
-
 # Meliora — Detecting Alzheimer's Disease from EEG Recordings
 ### PharmaHacks 2026 | Challenge 3
 
