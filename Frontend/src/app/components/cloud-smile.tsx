@@ -1,8 +1,13 @@
-import React from 'react';
+import React from "react";
 
-export function CloudSmile({ className = '' }: { className?: string }) {
+export function CloudSmile({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      className={className}
+      viewBox="0 0 120 80"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       {/* Cloud shape */}
       <path
         d="M 25 50 Q 20 50 20 45 Q 20 35 30 35 Q 30 25 45 25 Q 55 20 65 25 Q 80 25 85 35 Q 100 35 100 45 Q 100 55 85 55 L 25 55 Q 20 55 20 50 Z"

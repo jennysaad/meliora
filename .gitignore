@@ -225,3 +225,4 @@ dataset.pt
 
 datasets/
 models/*.pkl
+backend/uploads/

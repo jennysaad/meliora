@@ -1,6 +1,7 @@
 import numpy as np
 import joblib
 import sys
+import os
 from tabulate import tabulate
 from utils import load_dataset, extract_features, majority_vote, build_dataset_from_sources
 
@@ -19,7 +20,9 @@ VALID_MODELS = ["xgboost", "catboost", "random_forest", "lightgbm"]
 def load_model(model_name):
     if model_name not in VALID_MODELS:
         raise ValueError(f"Unknown model '{model_name}'. Choose from: {VALID_MODELS}")
-    return joblib.load(f"models/{model_name}_model.pkl")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    return joblib.load(os.path.join(BASE_DIR, "models", f"{model_name}_model.pkl"))
+
 
 def run_predict(sources, model_name="xgboost"):
     """
@@ -28,9 +31,11 @@ def run_predict(sources, model_name="xgboost"):
 
     returns: list of dicts with subject, prediction, confidence
     """
-    build_dataset_from_sources(sources, "datasets/testingset.pt")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    TESTINGSET_PATH = os.path.join(BASE_DIR, "testingset.pt")
+    build_dataset_from_sources(sources, TESTINGSET_PATH)
 
-    X_rbp, X_scc, y_tensor, groups = load_dataset("datasets/testingset.pt")
+    X_rbp, X_scc, y_tensor, groups = load_dataset(TESTINGSET_PATH)
     X = extract_features(X_rbp, X_scc)
     y = y_tensor.squeeze().numpy().astype(int)
 

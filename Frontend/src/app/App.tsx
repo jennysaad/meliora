@@ -32,49 +32,83 @@ import {
 } from "recharts";
 import { ImageWithFallback } from "./components/figma/ImageWithFallback";
 
-type ModelType = "CatBoost" | "XGBoost" | "LightGBM" | "Random Forest" | null;
+type ModelType = "catboost" | "xgboost" | "lightgbm" | "random_forest" | null;
 type TabType = "home" | "about";
 
 interface PredictionResult {
+  subject: string;
   prediction: string;
   confidence: number;
 }
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
-  const [selectedModel, setSelectedModel] = useState<ModelType>("CatBoost");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
-  const [showResults, setShowResults] = useState(false);
-  const [uploadedData, setUploadedData] = useState<any[]>([]);
+  const [selectedModel, setSelectedModel] = useState<ModelType>("xgboost");
+  const [uploadedFiles, setUploadedFiles] = useState<FileList | null>(null);
+  const [prediction, setPrediction] = useState<PredictionResult[] | null>(null);
+  // const [showResults, setShowResults] = useState(false);
+  // const [uploadedData, setUploadedData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
-      // Mock data preview
-      setUploadedData([
-        { id: 1, age: 65, mmse: 24, memory_score: 3.2, education: 16 },
-        { id: 2, age: 72, mmse: 21, memory_score: 2.8, education: 12 },
-        { id: 3, age: 68, mmse: 26, memory_score: 3.5, education: 18 },
-        { id: 4, age: 70, mmse: 22, memory_score: 2.9, education: 14 },
-        { id: 5, age: 75, mmse: 19, memory_score: 2.3, education: 10 },
-      ]);
+    setUploadedFiles(e.target.files);
+    // if (e.target.files && e.target.files[0]) {
+    //   setUploadedFile(e.target.files[0]);
+    //   // Mock data preview
+    //   setUploadedData([
+    //     { id: 1, age: 65, mmse: 24, memory_score: 3.2, education: 16 },
+    //     { id: 2, age: 72, mmse: 21, memory_score: 2.8, education: 12 },
+    //     { id: 3, age: 68, mmse: 26, memory_score: 3.5, education: 18 },
+    //     { id: 4, age: 70, mmse: 22, memory_score: 2.9, education: 14 },
+    //     { id: 5, age: 75, mmse: 19, memory_score: 2.3, education: 10 },
+    //   ]);
+    // }
+  };
+
+  // const handlePredict = () => {
+  //   if (!uploadedFile || !selectedModel) return;
+
+  const runPrediction = async (model: ModelType, files: FileList) => {
+    if (!model) return;
+    setLoading(true);
+    setError(null);
+    const formData = new FormData();
+    Array.from(files).forEach(f => formData.append("files", f));
+    formData.append("model", model);
+    try {
+      const res = await fetch("http://localhost:5000/predict", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Prediction failed");
+      setPrediction(data.results);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePredict = () => {
-    if (!uploadedFile || !selectedModel) return;
-
-    // Mock prediction
-    setTimeout(() => {
-      const mockConfidence = Math.random() * 40 + 60;
-      setPrediction({
-        prediction: mockConfidence > 75 ? "Low Risk" : "Moderate Risk",
-        confidence: mockConfidence,
-      });
-      setShowResults(true);
-    }, 1000);
+    if (uploadedFiles) runPrediction(selectedModel, uploadedFiles);
   };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const model = e.target.value as ModelType;
+    setSelectedModel(model);
+    if (prediction && uploadedFiles) runPrediction(model, uploadedFiles);
+  };
+
+
+    // // Mock prediction
+    // setTimeout(() => {
+    //   const mockConfidence = Math.random() * 40 + 60;
+    //   setPrediction({
+    //     prediction: mockConfidence > 75 ? "Low Risk" : "Moderate Risk",
+    //     confidence: mockConfidence,
+    //   });
+    //   setShowResults(true);
+    // }, 1000);
+  // };
 
   // Mock data for charts
   const accuracyData = [
@@ -126,8 +160,24 @@ export default function App() {
       <header className="bg-primary border-b-4 border-accent">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex-1 text-center">
-              <h1 className="text-xl text-white">Naana</h1>
+            <div className="flex-1 flex justify-center items-center">
+              <div className="flex items-center justify-center mx-auto">
+                <h1
+                  className="text-3xl font-extrabold text-white tracking-wide text-center"
+                  style={{
+                    fontFamily: "Georgia, serif",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  Nana
+                </h1>
+                <ImageWithFallback
+                  src={"/src/app/components/LogoTransparent.png"}
+                  alt="Nana Logo"
+                  className="w-24 h-24 object-contain inline-block align-middle ml-0.5"
+                  style={{ marginTop: -2 }}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -172,14 +222,14 @@ export default function App() {
                     className="px-8 py-3 bg-secondary text-foreground border-2 border-accent cursor-pointer text-sm hover:bg-secondary/70"
                   >
                     <Upload className="w-4 h-4 inline mr-2" />
-                    {uploadedFile ? uploadedFile.name : "Upload Your Data"}
+                    {uploadedFiles ? `${uploadedFiles.length} file(s) selected` : "Upload Your Data"}
                   </label>
                   <input
                     id="file-upload"
                     type="file"
                     onChange={handleFileUpload}
                     className="hidden"
-                    accept=".csv,.json,.txt,.npy"
+                    accept=".npy"
                     multiple
                     // @ts-ignore: webkitdirectory is a valid attribute for folder upload in browsers
                     webkitdirectory="true"
@@ -187,41 +237,28 @@ export default function App() {
                     directory="true"
                   />
 
-                  <a
-                    href="../predict"
-                    className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm inline-block"
-                    style={{ textDecoration: "none" }}
-                  >
-                    Predict
-                  </a>
+                  <button
+                      onClick={handlePredict}
+                      disabled={!uploadedFiles || loading}
+                      className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm disabled:opacity-50"
+                    >
+                      {loading ? "Predicting..." : "Predict"}
+                    </button>
 
                   <select
                     value={selectedModel || ""}
-                    onChange={(e) =>
-                      setSelectedModel(e.target.value as ModelType)
-                    }
+                    onChange={handleModelChange}
                     className="px-4 py-3 bg-white border-2 border-accent text-xs text-foreground cursor-pointer"
                   >
-                    <option value="CatBoost">CatBoost</option>
-                    <option value="XGBoost">XGBoost</option>
-                    <option value="LightGBM">LightGBM</option>
-                    <option value="Random Forest">Random Forest</option>
+                    <option value="catboost">CatBoost</option>
+                    <option value="xgboost">XGBoost</option>
+                    <option value="lightgbm">LightGBM</option>
+                    <option value="random_forest">Random Forest</option>
                   </select>
                 </div>
 
-                {uploadedFile && (
-                  <>
-                    <button
-                      onClick={handlePredict}
-                      className="px-8 py-2 bg-accent text-white border-2 border-accent hover:bg-accent/80 text-sm mb-6"
-                    >
-                      Analyze Data ✨
-                    </button>
-                  </>
-                )}
-
                 {/* Data Preview */}
-                {uploadedData.length > 0 && (
+                {/* {uploadedData.length > 0 && (
                   <div className="bg-white border-2 border-primary p-4">
                     <h3 className="mb-3 text-sm">Data Preview</h3>
                     <table className="w-full text-xs border-collapse">
@@ -267,7 +304,8 @@ export default function App() {
                       </tbody>
                     </table>
                   </div>
-                )}
+                )} */}
+
               </section>
 
               {/* Space for icons */}
@@ -287,45 +325,35 @@ export default function App() {
                   />
                 </div>
                 <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center relative">
-                  {showResults && prediction ? (
-                    <div className="w-full text-center">
-                      <h3 className="mb-6 text-lg">Results</h3>
-                      <div className="flex flex-col items-center gap-6">
-                        <GrandparentIcon
-                          variant={
-                            prediction.confidence > 70 ? "happy" : "neutral"
-                          }
-                          className="w-28 h-28"
-                        />
-                        <div className="max-w-md w-full">
-                          <div className="bg-muted/30 border-2 border-secondary p-6">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Prediction Result
-                            </p>
-                            <p className="text-2xl mb-4">
-                              {prediction.prediction}
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Confidence
-                            </p>
-                            <div className="bg-white border-2 border-primary h-6 overflow-hidden">
-                              <div
-                                style={{ width: `${prediction.confidence}%` }}
-                                className="h-full bg-primary"
-                              />
-                            </div>
-                            <p className="text-sm mt-2">
-                              {prediction.confidence.toFixed(1)}%
-                            </p>
-                          </div>
-                        </div>
+                  {error ? (
+                      <p className="text-destructive text-sm">{error}</p>
+                    ) : prediction ? (
+                      <div className="w-full">
+                        <h3 className="text-center mb-4 text-lg">Results</h3>
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-muted/30">
+                              <th className="text-left p-2 border border-border">Subject</th>
+                              <th className="text-left p-2 border border-border">Prediction</th>
+                              <th className="text-left p-2 border border-border">Confidence</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {prediction.map((r) => (
+                              <tr key={r.subject}>
+                                <td className="p-2 border border-border">{r.subject}</td>
+                                <td className="p-2 border border-border">{r.prediction}</td>
+                                <td className="p-2 border border-border">{r.confidence.toFixed(1)}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground text-sm">
-                      <p>Results will appear here after analysis</p>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="text-muted-foreground text-sm">
+                        <p>Results will appear here after analysis</p>
+                      </div>
+                    )}
                 </div>
               </section>
 
