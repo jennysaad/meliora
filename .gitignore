@@ -211,3 +211,9 @@ __marimo__/
 .DS_Store
 
 training/
+
+# CatBoost training artifacts
+catboost_info/
+
+# Generated dataset
+dataset.pt

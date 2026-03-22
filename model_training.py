@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.model_selection import GroupShuffleSplit
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 
 # models
 from catboost import CatBoostClassifier
@@ -68,29 +68,38 @@ y = y_tensor.squeeze().numpy().astype(int)
 # Replace any broken values (e.g. NaN or Infinity) to 0
 X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
-# Split data - 80% for training, 20% for testing
-X_train, X_test, y_train, y_test = train_test_split(
-    X, 
-    y, 
-    test_size=0.2, 
-    random_state=42, 
-    stratify=y
-)
+# Split data by subject — 80% for training, 20% for validation
+# GroupShuffleSplit keeps ALL windows from the same subject together
+# so the model never sees the same person in both train and validation
+# (regular train_test_split would split randomly by window, causing data leakage)
+splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_idx, val_idx = next(splitter.split(X, y, groups=groups))
 
-# Split the 80% into 60 and 20 (20 validation set, use each separate model on this)
-X_traintest, X_validation, y_traintest, y_validation = train_test_split(
-    X_train, 
-    y_train, 
-    test_size=0.2, 
-    random_state=42, 
-    stratify=y_train
-)
+X_traintest = X[train_idx]
+X_validation = X[val_idx]
+y_traintest = y[train_idx]
+y_validation = y[val_idx]
 
-# Initialize models, fit data, predict output
-catModel = CatBoostClassifier(verbose=0)
-rfModel = RandomForestClassifier()
-xgbModel = XGBClassifier()
-lgbmModel = LGBMClassifier()
+val_groups = groups[val_idx]
+
+# We have 25 AD vs 13 CN — almost 2x more AD than CN
+# Without balancing, models are biased toward always predicting AD
+# since that's the majority class — they get decent accuracy but
+# never correctly identify healthy subjects
+
+# calculate the imbalance ratio for XGBoost (it uses a different
+# parameter than the other models)
+# example: 13 CN / 25 AD = 0.52 → XGBoost will weight CN samples higher
+pos_weight = len(y_traintest[y_traintest == 0]) / max(len(y_traintest[y_traintest == 1]), 1)
+
+# class_weight='balanced' tells sklearn models to automatically
+# give more importance to the minority class (CN)
+# auto_class_weights='Balanced' does the same for CatBoost
+# scale_pos_weight does the same for XGBoost using our ratio above
+catModel = CatBoostClassifier(verbose=0, auto_class_weights='Balanced')
+rfModel = RandomForestClassifier(class_weight='balanced')
+xgbModel = XGBClassifier(scale_pos_weight=pos_weight, eval_metric='logloss')
+lgbmModel = LGBMClassifier(class_weight='balanced')
 
 catModel.fit(X_traintest, y_traintest)
 rfModel.fit(X_traintest, y_traintest)
@@ -108,11 +117,32 @@ rfProba = rfModel.predict_proba(X_validation)[:, 1]
 xgbProba = xgbModel.predict_proba(X_validation)[:, 1]
 lgbmProba = lgbmModel.predict_proba(X_validation)[:, 1]
 
-# Accuracy
-catCorrect = accuracy_score(y_validation, catPred)
-rfCorrect = accuracy_score(y_validation, rfPred)
-xgbCorrect = accuracy_score(y_validation, xgbPred)
-lgbmCorrect = accuracy_score(y_validation, lgbmPred)
+# Majority voting — required by the challenge (section 3.1.1)
+# each subject has many windows, we combine them into one final prediction
+# if more than half the windows say AD, the final answer is AD
+def majority_vote(y_pred, y_true, subs):
+    preds, trues = [], []
+    for s in np.unique(subs):
+        mask = subs == s
+        preds.append(int(np.round(np.mean(y_pred[mask]))))  # majority vote
+        trues.append(y_true[mask][0])                       # true label (same for all windows)
+    return np.array(preds), np.array(trues)
+
+catPred_subj,  catTrue_subj  = majority_vote(catPred,  y_validation, val_groups)
+rfPred_subj,   rfTrue_subj   = majority_vote(rfPred,   y_validation, val_groups)
+xgbPred_subj,  xgbTrue_subj  = majority_vote(xgbPred,  y_validation, val_groups)
+lgbmPred_subj, lgbmTrue_subj = majority_vote(lgbmPred, y_validation, val_groups)
+
+# Accuracy and F1 at subject level
+catCorrect  = accuracy_score(catTrue_subj,  catPred_subj)
+rfCorrect   = accuracy_score(rfTrue_subj,   rfPred_subj)
+xgbCorrect  = accuracy_score(xgbTrue_subj,  xgbPred_subj)
+lgbmCorrect = accuracy_score(lgbmTrue_subj, lgbmPred_subj)
+
+catF1  = f1_score(catTrue_subj,  catPred_subj,  zero_division=0)
+rfF1   = f1_score(rfTrue_subj,   rfPred_subj,   zero_division=0)
+xgbF1  = f1_score(xgbTrue_subj,  xgbPred_subj,  zero_division=0)
+lgbmF1 = f1_score(lgbmTrue_subj, lgbmPred_subj, zero_division=0)
 
 # Area under curve (how well the model's probability scores separate the two classes e.g. maybe it is just guessing)
 catAUC = roc_auc_score(y_validation, catProba)
@@ -123,10 +153,9 @@ lgbmAUC = roc_auc_score(y_validation, lgbmProba)
 from tabulate import tabulate
 
 results = [
-    ["CatBoost",      f"{catCorrect:.4f}",  f"{catAUC:.4f}"],
-    ["Random Forest", f"{rfCorrect:.4f}",   f"{rfAUC:.4f}"],
-    ["XGBoost",       f"{xgbCorrect:.4f}",  f"{xgbAUC:.4f}"],
-    ["LightGBM",      f"{lgbmCorrect:.4f}", f"{lgbmAUC:.4f}"],
+    ["CatBoost",      f"{catCorrect:.4f}",  f"{catF1:.4f}",  f"{catAUC:.4f}"],
+    ["Random Forest", f"{rfCorrect:.4f}",   f"{rfF1:.4f}",   f"{rfAUC:.4f}"],
+    ["XGBoost",       f"{xgbCorrect:.4f}",  f"{xgbF1:.4f}",  f"{xgbAUC:.4f}"],
+    ["LightGBM",      f"{lgbmCorrect:.4f}", f"{lgbmF1:.4f}", f"{lgbmAUC:.4f}"],
 ]
-
-print(tabulate(results, headers=["Model", "Accuracy", "AUC"], tablefmt="rounded_outline"))
+print(tabulate(results, headers=["Model", "Accuracy", "F1", "AUC"], tablefmt="rounded_outline"))
