@@ -74,10 +74,13 @@ export default function App() {
     setLoading(true);
     setError(null);
     const formData = new FormData();
-    Array.from(files).forEach(f => formData.append("files", f));
+    Array.from(files).forEach((f) => formData.append("files", f));
     formData.append("model", model);
     try {
-      const res = await fetch("http://localhost:5000/predict", { method: "POST", body: formData });
+      const res = await fetch("http://localhost:5000/predict", {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Prediction failed");
       setPrediction(data.results);
@@ -98,16 +101,15 @@ export default function App() {
     if (prediction && uploadedFiles) runPrediction(model, uploadedFiles);
   };
 
-
-    // // Mock prediction
-    // setTimeout(() => {
-    //   const mockConfidence = Math.random() * 40 + 60;
-    //   setPrediction({
-    //     prediction: mockConfidence > 75 ? "Low Risk" : "Moderate Risk",
-    //     confidence: mockConfidence,
-    //   });
-    //   setShowResults(true);
-    // }, 1000);
+  // // Mock prediction
+  // setTimeout(() => {
+  //   const mockConfidence = Math.random() * 40 + 60;
+  //   setPrediction({
+  //     prediction: mockConfidence > 75 ? "Low Risk" : "Moderate Risk",
+  //     confidence: mockConfidence,
+  //   });
+  //   setShowResults(true);
+  // }, 1000);
   // };
 
   // Mock data for charts
@@ -222,7 +224,9 @@ export default function App() {
                     className="px-8 py-3 bg-secondary text-foreground border-2 border-accent cursor-pointer text-sm hover:bg-secondary/70"
                   >
                     <Upload className="w-4 h-4 inline mr-2" />
-                    {uploadedFiles ? `${uploadedFiles.length} file(s) selected` : "Upload Your Data"}
+                    {uploadedFiles
+                      ? `${uploadedFiles.length} file(s) selected`
+                      : "Upload Your Data"}
                   </label>
                   <input
                     id="file-upload"
@@ -238,12 +242,12 @@ export default function App() {
                   />
 
                   <button
-                      onClick={handlePredict}
-                      disabled={!uploadedFiles || loading}
-                      className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm disabled:opacity-50"
-                    >
-                      {loading ? "Predicting..." : "Predict"}
-                    </button>
+                    onClick={handlePredict}
+                    disabled={!uploadedFiles || loading}
+                    className="px-8 py-3 bg-primary text-white border-2 border-primary hover:bg-primary/80 text-sm disabled:opacity-50"
+                  >
+                    {loading ? "Predicting..." : "Predict"}
+                  </button>
 
                   <select
                     value={selectedModel || ""}
@@ -305,7 +309,6 @@ export default function App() {
                     </table>
                   </div>
                 )} */}
-
               </section>
 
               {/* Space for icons */}
@@ -326,34 +329,46 @@ export default function App() {
                 </div>
                 <div className="bg-white border-2 border-primary p-6 min-h-[180px] flex items-center justify-center relative">
                   {error ? (
-                      <p className="text-destructive text-sm">{error}</p>
-                    ) : prediction ? (
-                      <div className="w-full">
-                        <h3 className="text-center mb-4 text-lg">Results</h3>
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-muted/30">
-                              <th className="text-left p-2 border border-border">Subject</th>
-                              <th className="text-left p-2 border border-border">Prediction</th>
-                              <th className="text-left p-2 border border-border">Confidence</th>
+                    <p className="text-destructive text-sm">{error}</p>
+                  ) : prediction ? (
+                    <div className="w-full">
+                      <h3 className="text-center mb-4 text-lg">Results</h3>
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-muted/30">
+                            <th className="text-left p-2 border border-border">
+                              Subject
+                            </th>
+                            <th className="text-left p-2 border border-border">
+                              Prediction
+                            </th>
+                            <th className="text-left p-2 border border-border">
+                              Confidence
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {prediction.map((r) => (
+                            <tr key={r.subject}>
+                              <td className="p-2 border border-border">
+                                {r.subject}
+                              </td>
+                              <td className="p-2 border border-border">
+                                {r.prediction}
+                              </td>
+                              <td className="p-2 border border-border">
+                                {r.confidence.toFixed(1)}%
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {prediction.map((r) => (
-                              <tr key={r.subject}>
-                                <td className="p-2 border border-border">{r.subject}</td>
-                                <td className="p-2 border border-border">{r.prediction}</td>
-                                <td className="p-2 border border-border">{r.confidence.toFixed(1)}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground text-sm">
-                        <p>Results will appear here after analysis</p>
-                      </div>
-                    )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground text-sm">
+                      <p>Results will appear here after analysis</p>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -489,8 +504,22 @@ export default function App() {
             </div>
           )}
 
-{activeTab === "about" && (
+          {activeTab === "about" && (
             <div className="space-y-8">
+              {/* Grandpa Cane Icon - larger, more right, closer to card */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  marginBottom: "-6px",
+                }}
+              >
+                <img
+                  src="/src/app/components/GrandpaCaneTransparent.png"
+                  alt="Grandpa with cane"
+                  className="w-25 h-auto ml-200"
+                />
+              </div>
               {/* Dataset */}
               <section>
                 <div className="bg-white border-2 border-primary p-6">
@@ -504,13 +533,12 @@ export default function App() {
                       electrodes on the scalp.
                     </p>
                     <p>
-                      We work with recordings from{" "}
-                      <strong>65 subjects</strong>: 36 with Alzheimer's
-                      (AD) and 29 healthy controls (CN). Each recording has
-                      19 electrodes across the scalp (10-20 layout), sampled
-                      at 500 Hz. Recordings range from 5 to 21 minutes. We
-                      train on 38 subjects (25 AD, 13 CN) and hold out the
-                      rest for testing.
+                      We work with recordings from <strong>65 subjects</strong>:
+                      36 with Alzheimer's (AD) and 29 healthy controls (CN).
+                      Each recording has 19 electrodes across the scalp (10-20
+                      layout), sampled at 500 Hz. Recordings range from 5 to 21
+                      minutes. We train on 38 subjects (25 AD, 13 CN) and hold
+                      out the rest for testing.
                     </p>
                   </div>
                   <div className="grid grid-cols-4 gap-3 mt-4">
@@ -524,12 +552,16 @@ export default function App() {
                         key={s.label}
                         className="text-center p-3 bg-muted/20 border border-border"
                       >
-                        <p className="text-lg font-bold text-primary">{s.val}</p>
-                        <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                        <p className="text-lg font-bold text-primary">
+                          {s.val}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {s.label}
+                        </p>
                       </div>
                     ))}
                   </div>
- 
+
                   {/* Class Distribution Pie Chart */}
                   <div className="mt-4">
                     <p className="text-xs font-bold mb-2">
@@ -558,17 +590,16 @@ export default function App() {
                       </ResponsiveContainer>
                       <div className="text-xs text-muted-foreground">
                         <p>
-                          Almost 2:1 ratio of AD to CN. Without class
-                          balancing, a model could just predict "AD" for
-                          everyone and get 66% accuracy without learning
-                          anything.
+                          Almost 2:1 ratio of AD to CN. Without class balancing,
+                          a model could just predict "AD" for everyone and get
+                          66% accuracy without learning anything.
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
- 
+
               {/* Pipeline */}
               <section>
                 <div className="bg-white border-2 border-accent p-6">
@@ -600,12 +631,14 @@ export default function App() {
                           </p>
                         </div>
                         {i < 5 && (
-                          <span className="text-muted-foreground text-xs flex-shrink-0">→</span>
+                          <span className="text-muted-foreground text-xs flex-shrink-0">
+                            →
+                          </span>
                         )}
                       </React.Fragment>
                     ))}
                   </div>
- 
+
                   {/* Detailed pipeline explanation */}
                   <ol className="space-y-4 text-xs">
                     <li className="flex items-start gap-3">
@@ -616,9 +649,9 @@ export default function App() {
                         <strong>Raw EEG:</strong> Each subject's recording is
                         stored as a .npy file with shape (19 channels × T
                         timepoints). T is different for everyone because
-                        recordings vary from 5 to 21 minutes. We can't
-                        stack these into one matrix, so we need to
-                        standardize the length.
+                        recordings vary from 5 to 21 minutes. We can't stack
+                        these into one matrix, so we need to standardize the
+                        length.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -626,13 +659,12 @@ export default function App() {
                         2
                       </span>
                       <div>
-                        <strong>Windowing:</strong> We slide a 30-second
-                        window across the recording, moving 15 seconds at a
-                        time. A 10-minute recording produces about 39
-                        overlapping windows. This gives us fixed-size chunks
-                        and multiplies our training data. A single subject
-                        can produce 30 to 80+ windows depending on their
-                        recording length.
+                        <strong>Windowing:</strong> We slide a 30-second window
+                        across the recording, moving 15 seconds at a time. A
+                        10-minute recording produces about 39 overlapping
+                        windows. This gives us fixed-size chunks and multiplies
+                        our training data. A single subject can produce 30 to
+                        80+ windows depending on their recording length.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -640,12 +672,11 @@ export default function App() {
                         3
                       </span>
                       <div>
-                        <strong>Downsample:</strong> We drop from 500 Hz to
-                        128 Hz. A 30-second window at 500 Hz has 15,000
-                        samples per channel. At 128 Hz it has 3,840. We
-                        lose some fine detail but keep all the frequency
-                        bands we care about (up to 45 Hz), and feature
-                        extraction runs much faster.
+                        <strong>Downsample:</strong> We drop from 500 Hz to 128
+                        Hz. A 30-second window at 500 Hz has 15,000 samples per
+                        channel. At 128 Hz it has 3,840. We lose some fine
+                        detail but keep all the frequency bands we care about
+                        (up to 45 Hz), and feature extraction runs much faster.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -653,13 +684,13 @@ export default function App() {
                         4
                       </span>
                       <div>
-                        <strong>Feature extraction:</strong> From each
-                        window we compute two things: Relative Band Power
-                        (how strong each frequency band is) and Spectral
-                        Coherence (how synchronized different brain regions
-                        are). We take the mean and standard deviation of
-                        both across the 30 time steps in each window. That
-                        gives us 380 numbers per window. Details below.
+                        <strong>Feature extraction:</strong> From each window we
+                        compute two things: Relative Band Power (how strong each
+                        frequency band is) and Spectral Coherence (how
+                        synchronized different brain regions are). We take the
+                        mean and standard deviation of both across the 30 time
+                        steps in each window. That gives us 380 numbers per
+                        window. Details below.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -667,9 +698,9 @@ export default function App() {
                         5
                       </span>
                       <div>
-                        <strong>Classification:</strong> An XGBoost model
-                        takes those 380 features and predicts AD or CN for
-                        each window independently.
+                        <strong>Classification:</strong> An XGBoost model takes
+                        those 380 features and predicts AD or CN for each window
+                        independently.
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -677,18 +708,18 @@ export default function App() {
                         6
                       </span>
                       <div>
-                        <strong>Majority vote:</strong> One subject might
-                        have 50 windows. Maybe 35 are classified AD and 15
-                        are classified CN. More than half say AD, so the
-                        final prediction for that person is AD. This
-                        smooths out noisy windows. The output is one
-                        prediction and one confidence score per patient.
+                        <strong>Majority vote:</strong> One subject might have
+                        50 windows. Maybe 35 are classified AD and 15 are
+                        classified CN. More than half say AD, so the final
+                        prediction for that person is AD. This smooths out noisy
+                        windows. The output is one prediction and one confidence
+                        score per patient.
                       </div>
                     </li>
                   </ol>
                 </div>
               </section>
- 
+
               {/* Feature Extraction */}
               <section>
                 <div className="bg-white border-2 border-accent p-6">
@@ -705,14 +736,13 @@ export default function App() {
                         Relative Band Power (RBP)
                       </p>
                       <p className="text-xs text-muted-foreground mb-3">
-                        Brain waves run at different speeds. Slow waves
-                        (Delta) dominate during deep sleep. Fast waves
-                        (Gamma) show up during active thinking. In
-                        Alzheimer's patients, you typically see more
-                        slow-wave activity and less Alpha. The brain is
-                        slowing down. We measure how much of each frequency
-                        band is present relative to the total signal, at
-                        every electrode, using Welch's method (a standard
+                        Brain waves run at different speeds. Slow waves (Delta)
+                        dominate during deep sleep. Fast waves (Gamma) show up
+                        during active thinking. In Alzheimer's patients, you
+                        typically see more slow-wave activity and less Alpha.
+                        The brain is slowing down. We measure how much of each
+                        frequency band is present relative to the total signal,
+                        at every electrode, using Welch's method (a standard
                         power spectrum technique).
                       </p>
                       <div className="grid grid-cols-5 gap-1">
@@ -746,37 +776,36 @@ export default function App() {
                         Spectral Coherence Connectivity (SCC)
                       </p>
                       <p className="text-xs text-muted-foreground mb-3">
-                        This measures whether different parts of the brain
-                        are talking to each other. We look at every pair of
-                        the 19 electrodes and check how similar their
-                        signals are at each frequency band, using a wavelet
-                        transform (Complex Morlet CWT). Then we average the
-                        coherence per electrode. In Alzheimer's, these
-                        values tend to drop. The brain regions become less
-                        connected.
+                        This measures whether different parts of the brain are
+                        talking to each other. We look at every pair of the 19
+                        electrodes and check how similar their signals are at
+                        each frequency band, using a wavelet transform (Complex
+                        Morlet CWT). Then we average the coherence per
+                        electrode. In Alzheimer's, these values tend to drop.
+                        The brain regions become less connected.
                       </p>
                       <div className="bg-muted/20 border border-border p-2 font-mono text-[10px]">
                         <p>SCC_x = (1/C) Σ |S_xy| / √(S_xx · S_yy)</p>
                       </div>
                     </div>
                   </div>
- 
+
                   {/* Feature dimensions breakdown */}
                   <div className="bg-muted/20 border border-border p-3 mt-4">
                     <p className="text-xs text-center">
                       For each 30-second window, we take the{" "}
-                      <strong>mean</strong> and <strong>std</strong> of both
-                      RBP and SCC across time, then flatten:
+                      <strong>mean</strong> and <strong>std</strong> of both RBP
+                      and SCC across time, then flatten:
                     </p>
                     <p className="font-mono text-xs text-center mt-1">
-                      mean_RBP(95) + mean_SCC(95) + std_RBP(95) + std_SCC(95)
-                      = <strong>380 features per window</strong>
+                      mean_RBP(95) + mean_SCC(95) + std_RBP(95) + std_SCC(95) ={" "}
+                      <strong>380 features per window</strong>
                     </p>
                     <p className="text-[10px] text-muted-foreground text-center mt-1">
                       95 = 5 frequency bands × 19 electrodes
                     </p>
                   </div>
- 
+
                   {/* Feature Breakdown Chart */}
                   <div className="mt-4">
                     <p className="text-xs font-bold mb-2">
@@ -827,7 +856,7 @@ export default function App() {
                   </div>
                 </div>
               </section>
- 
+
               {/* Model Training */}
               <section>
                 <div className="bg-white border-2 border-secondary p-6">
@@ -874,15 +903,15 @@ export default function App() {
                       All four models use class weighting to penalize this.
                     </li>
                     <li>
-                      <strong>Majority vote:</strong> One patient can produce
-                      30 to 80+ windows. We classify each window, then take a
-                      vote. If most of a patient's windows say AD, the final
-                      answer is AD. One prediction per person.
+                      <strong>Majority vote:</strong> One patient can produce 30
+                      to 80+ windows. We classify each window, then take a vote.
+                      If most of a patient's windows say AD, the final answer is
+                      AD. One prediction per person.
                     </li>
                   </ul>
                 </div>
               </section>
- 
+
               {/* Results */}
               <section>
                 <div className="bg-white border-2 border-primary p-6">
@@ -897,33 +926,43 @@ export default function App() {
                     </p>
                     <ul className="space-y-1 ml-2">
                       <li>
-                        <strong>Accuracy</strong> = what fraction of subjects
-                        we classified correctly. With 8 subjects, getting one
-                        wrong costs 12.5%.
+                        <strong>Accuracy</strong> = what fraction of subjects we
+                        classified correctly. With 8 subjects, getting one wrong
+                        costs 12.5%.
                       </li>
                       <li>
                         <strong>F1</strong> = balances two things: how many of
-                        the real AD cases we caught (recall) vs. how many of
-                        our AD predictions were actually correct (precision).
-                        More useful than accuracy when classes are imbalanced.
+                        the real AD cases we caught (recall) vs. how many of our
+                        AD predictions were actually correct (precision). More
+                        useful than accuracy when classes are imbalanced.
                       </li>
                       <li>
                         <strong>AUC</strong> = how well the model separates AD
-                        from CN at the window level, before majority voting.
-                        1.0 means it ranks every AD window above every CN
-                        window. Our models are all above 0.99, meaning the
-                        raw window-level separation is very strong.
+                        from CN at the window level, before majority voting. 1.0
+                        means it ranks every AD window above every CN window.
+                        Our models are all above 0.99, meaning the raw
+                        window-level separation is very strong.
                       </li>
                     </ul>
                   </div>
- 
+
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart
                       data={[
                         { model: "XGBoost", Accuracy: 75, F1: 50, AUC: 99.7 },
-                        { model: "CatBoost", Accuracy: 62.5, F1: 40, AUC: 99.9 },
+                        {
+                          model: "CatBoost",
+                          Accuracy: 62.5,
+                          F1: 40,
+                          AUC: 99.9,
+                        },
                         { model: "RF", Accuracy: 50, F1: 33.3, AUC: 99.9 },
-                        { model: "LightGBM", Accuracy: 62.5, F1: 40, AUC: 99.8 },
+                        {
+                          model: "LightGBM",
+                          Accuracy: 62.5,
+                          F1: 40,
+                          AUC: 99.8,
+                        },
                       ]}
                     >
                       <CartesianGrid
@@ -951,22 +990,45 @@ export default function App() {
                       <Bar dataKey="AUC" fill="#957C62" />
                     </BarChart>
                   </ResponsiveContainer>
- 
+
                   <table className="w-full text-xs border-collapse mt-4">
                     <thead>
                       <tr className="bg-muted/30">
-                        <th className="text-left p-2 border border-border">Model</th>
-                        <th className="text-left p-2 border border-border">Accuracy</th>
-                        <th className="text-left p-2 border border-border">F1</th>
-                        <th className="text-left p-2 border border-border">AUC</th>
+                        <th className="text-left p-2 border border-border">
+                          Model
+                        </th>
+                        <th className="text-left p-2 border border-border">
+                          Accuracy
+                        </th>
+                        <th className="text-left p-2 border border-border">
+                          F1
+                        </th>
+                        <th className="text-left p-2 border border-border">
+                          AUC
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
                         { m: "XGBoost", a: "0.750", f: "0.500", auc: "0.9972" },
-                        { m: "CatBoost", a: "0.625", f: "0.400", auc: "0.9992" },
-                        { m: "Random Forest", a: "0.500", f: "0.333", auc: "0.9994" },
-                        { m: "LightGBM", a: "0.625", f: "0.400", auc: "0.9983" },
+                        {
+                          m: "CatBoost",
+                          a: "0.625",
+                          f: "0.400",
+                          auc: "0.9992",
+                        },
+                        {
+                          m: "Random Forest",
+                          a: "0.500",
+                          f: "0.333",
+                          auc: "0.9994",
+                        },
+                        {
+                          m: "LightGBM",
+                          a: "0.625",
+                          f: "0.400",
+                          auc: "0.9983",
+                        },
                       ].map((r) => (
                         <tr
                           key={r.m}
@@ -983,14 +1045,14 @@ export default function App() {
                     </tbody>
                   </table>
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    Why is AUC near-perfect but accuracy only 75%? AUC
-                    measures window-level separation before voting. At that
-                    level, AD and CN windows are clearly different. But after
-                    majority voting on only 8 subjects, a single wrong person
-                    drops accuracy by 12.5%. XGBoost got 6 out of 8 right.
-                    We picked it as our primary model.
+                    Why is AUC near-perfect but accuracy only 75%? AUC measures
+                    window-level separation before voting. At that level, AD and
+                    CN windows are clearly different. But after majority voting
+                    on only 8 subjects, a single wrong person drops accuracy by
+                    12.5%. XGBoost got 6 out of 8 right. We picked it as our
+                    primary model.
                   </p>
- 
+
                   {/* Confusion Matrix */}
                   <div className="mt-6">
                     <p className="text-xs font-bold mb-2">
@@ -1034,7 +1096,7 @@ export default function App() {
                   </div>
                 </div>
               </section>
- 
+
               {/* Key Design Decisions */}
               <section>
                 <div className="bg-white border-2 border-accent p-6">
@@ -1048,7 +1110,9 @@ export default function App() {
                       <div className="w-3 h-3 bg-primary mt-1 flex-shrink-0" />
                       <div className="space-y-2">
                         <p>
-                          <strong>Fixing data leakage (the biggest one):</strong>
+                          <strong>
+                            Fixing data leakage (the biggest one):
+                          </strong>
                         </p>
                         <p>
                           Every person in the dataset gives us many windows.
@@ -1088,13 +1152,15 @@ export default function App() {
                         </p>
                       </div>
                     </div>
- 
+
                     {/* Wavelet coherence */}
                     <div className="flex items-start gap-3">
                       <div className="w-3 h-3 bg-secondary mt-1 flex-shrink-0" />
                       <div className="space-y-2">
                         <p>
-                          <strong>Wavelet coherence instead of simple correlation:</strong>
+                          <strong>
+                            Wavelet coherence instead of simple correlation:
+                          </strong>
                         </p>
                         <p>
                           We could have just checked whether electrode signals
@@ -1108,7 +1174,7 @@ export default function App() {
                         </p>
                       </div>
                     </div>
- 
+
                     {/* Majority voting */}
                     <div className="flex items-start gap-3">
                       <div className="w-3 h-3 bg-accent mt-1 flex-shrink-0" />
@@ -1127,7 +1193,7 @@ export default function App() {
                         </p>
                       </div>
                     </div>
- 
+
                     {/* Modular code */}
                     <div className="flex items-start gap-3">
                       <div className="w-3 h-3 bg-destructive mt-1 flex-shrink-0" />
@@ -1139,23 +1205,25 @@ export default function App() {
                           preprocess.py handles feature extraction.
                           model_training.py handles training and evaluation.
                           predict.py runs inference on new data. They all share
-                          utils.py for common functions (loading data, flattening
-                          features, majority voting). When the test set was
-                          released Sunday morning, we ran predict.py on it with
-                          one command.
+                          utils.py for common functions (loading data,
+                          flattening features, majority voting). When the test
+                          set was released Sunday morning, we ran predict.py on
+                          it with one command.
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
               </section>
- 
+
               {/* Disclaimer */}
               <section>
                 <div className="bg-white border-2 border-destructive p-4">
                   <p className="text-xs text-muted-foreground">
                     <Info className="w-3 h-3 inline mr-1 text-destructive" />
-                    <strong>Naana is a screening tool, not a diagnosis.</strong>{" "}
+                    <strong>
+                      Naana is a screening tool, not a diagnosis.
+                    </strong>{" "}
                     Always consult a healthcare provider.
                   </p>
                 </div>
@@ -1164,7 +1232,7 @@ export default function App() {
           )}
         </main>
       </div>
- 
+
       {/* Footer */}
       <footer className="bg-primary border-t-4 border-border mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
